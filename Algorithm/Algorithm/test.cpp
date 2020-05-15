@@ -410,6 +410,9 @@ int main()
 
 //快速排序
 #include<iostream>
+#include<time.h>
+#include<stack>
+#include<assert.h>
 
 using namespace std;
 
@@ -430,13 +433,44 @@ int partition(T *arr, int left, int right)
 	T temp = arr[i];
 	while (i < j)
 	{
-		while (i < j&&arr[j] > temp)	--j;
+		while (i < j && arr[j] > temp)	--j;
 		if (i < j)	arr[i] = arr[j];
-		while (i < j&&arr[i] <= temp)	++i;
+		while (i < j && arr[i] <= temp)	++i;
 		if (i < j)	arr[j] = arr[i];
 	}
 	arr[i] = temp;
 	return i;
+}
+
+template<class T>
+int one_partition(T *arr, int left, int right)
+{
+	int i = left + 1, j = i;
+	while (j <= right)
+	{
+		if (arr[j] <= arr[left])
+		{
+			swap(arr[j], arr[i]);
+			++j;
+			++i;
+		}
+		++j;
+	}
+	i = i - 1;
+	swap(arr[i], arr[left]);
+	return i;
+}
+
+template<class T>
+int rand_partition(T *arr, int left, int right)
+{
+	//随机划分法
+	srand(time(NULL));
+	int pos = rand() % (right - left + 1) + left;
+	swap(arr[pos], arr[left]);
+	//三位取中划分法
+	//int mid = (right - left + 1) / 2 + left;
+	return partition(arr, left, right);
 }
 
 template<class T>
@@ -451,23 +485,135 @@ void quick_pass(T *arr, int left, int right)
 	}
 }
 
+template<class T>
+void nice_quick_pass(T *arr, int left, int right)
+{
+	stack<int> st;
+	st.push(left);
+	st.push(right);
+	while (!st.empty())
+	{
+		right = st.top();	st.pop();
+		left = st.top();	st.pop();
+		int mid = partition(arr, left, right);
+		if (left < mid - 1)
+		{
+			st.push(left);
+			st.push(mid - 1);
+		}
+		if (mid + 1 < right)
+		{
+			st.push(mid + 1);
+			st.push(right);
+		}
+	}
+}
+
 template <class T>
 void quick_sort(T *arr, int n)		
 {
 	if (nullptr == arr || n <= 1)
-	{
 		return;
+	//quick_pass(arr, 0, n - 1);
+	nice_quick_pass(arr, 0, n - 1);
+}
+
+typedef int ElemType;
+typedef struct Node
+{
+	ElemType data;
+	Node* next;
+}Node;
+
+typedef struct
+{
+	Node* head;
+	int cursize;
+}LinkList;
+
+Node* Buynode()
+{
+	Node* s = (Node*)malloc(sizeof(*s));
+	if (NULL == s)	exit(EXIT_FAILURE);
+	memset(s, 0, sizeof(Node));
+	return s;
+}
+
+void Init_List(LinkList* plist)
+{
+	assert(plist != NULL);
+	plist->head = Buynode();
+	plist->cursize = 0;
+}
+
+void Print_List(LinkList* plist)
+{
+	assert(plist != NULL);
+	Node* p = plist->head->next;
+	while (p != NULL)
+	{
+		cout << p->data << " ";
+		p = p->next;
 	}
-	quick_pass(arr, 0, n - 1);
+	cout << endl;
+}
+
+void push_front(LinkList* plist, ElemType val)
+{
+	assert(plist != NULL);
+	Node* s = Buynode();
+	s->data = val;
+	s->next = plist->head->next;
+	plist->head->next = s;
+	plist->cursize += 1;
+}
+
+Node* ListPartition(Node* begin, Node* end)
+{
+	Node* i = begin, *j = i->next;
+	while (j != end)
+	{
+		if (j->data < begin->data)
+		{
+			swap(i->next->data, j->data);
+			i = i->next;
+			j = j->next;
+		}
+		else
+			j = j->next;
+	}
+	swap(begin->data, i->data);
+	return i;
+}
+
+void ListQuickSort(Node* begin, Node* end)
+{
+	if (begin != end)
+	{
+		Node* mid = ListPartition(begin, end);
+		ListQuickSort(begin, mid);
+		ListQuickSort(mid->next, end);
+	}
 }
 
 int main()
 {
-	int arr[] = { 56, 34, 78, 12, 23, 92, 86, 100, 45, 67 };
+	LinkList mylist;
+	Init_List(&mylist);
+	for (int i = 0; i < 13; ++i)
+	{
+		push_front(&mylist, rand() % 100);
+	}
+	Print_List(&mylist);
+	ListQuickSort(mylist.head->next, NULL);
+	Print_List(&mylist);
+
+	/*int arr[] = { 56, 34, 78, 12, 23, 92, 86, 100, 45, 67 };
 	int n = sizeof(arr) / sizeof(arr[0]);
 	print_arr(arr, n);
 	quick_sort(arr, n);
-	print_arr(arr, n);
+	print_arr(arr, n);*/
+
 	system("pause");
 	return 0;
 }
